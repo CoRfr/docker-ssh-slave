@@ -22,6 +22,7 @@
 
 FROM openjdk:8-jdk-alpine
 LABEL MAINTAINER="Nicolas De Loof <nicolas.deloof@gmail.com>"
+LABEL MAINTAINER2="Damien Duportal <damien.duportal@gmail.com>"
 
 ARG user=jenkins
 ARG group=jenkins
@@ -31,26 +32,30 @@ ARG JENKINS_AGENT_HOME=/home/${user}
 
 ENV JENKINS_AGENT_HOME ${JENKINS_AGENT_HOME}
 
+COPY setup-sshd /usr/local/bin/setup-sshd
+
 RUN addgroup -g ${gid} ${group} \
     && adduser -h "${JENKINS_AGENT_HOME}" -u "${uid}" -G "${group}" -D -s /bin/bash "${user}" \
-    && passwd -u jenkins
-
-# setup SSH server
-RUN apk add --update --no-cache \
-  bash \
-  openssh
-RUN sed -i 's/#PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
-RUN sed -i 's/#RSAAuthentication.*/RSAAuthentication yes/' /etc/ssh/sshd_config
-RUN sed -i 's/#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
-RUN sed -i 's/#SyslogFacility.*/SyslogFacility AUTH/' /etc/ssh/sshd_config
-RUN sed -i 's/#LogLevel.*/LogLevel INFO/' /etc/ssh/sshd_config
-RUN mkdir /var/run/sshd
+    && passwd -u "${user}" \
+    && apk add --update --no-cache \
+    curl \
+    bash \
+    docker \
+    git \
+    openssh \
+    tini \
+  && sed -i 's/#PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config \
+  && sed -i 's/#RSAAuthentication.*/RSAAuthentication yes/' /etc/ssh/sshd_config \
+  && sed -i 's/#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config \
+  && sed -i 's/#SyslogFacility.*/SyslogFacility AUTH/' /etc/ssh/sshd_config \
+  && sed -i 's/#LogLevel.*/LogLevel INFO/' /etc/ssh/sshd_config \
+  && mkdir /var/run/sshd \
+  && chmod a+x /usr/local/bin/setup-sshd \
+  && touch /var/run/docker.sock
 
 VOLUME "${JENKINS_AGENT_HOME}" "/tmp" "/run" "/var/run"
 WORKDIR "${JENKINS_AGENT_HOME}"
 
-COPY setup-sshd /usr/local/bin/setup-sshd
-
 EXPOSE 22
 
-ENTRYPOINT ["setup-sshd"]
+ENTRYPOINT ["/sbin/tini","--","/usr/local/bin/setup-sshd"]

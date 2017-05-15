@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 SUT_IMAGE=jenkins-ssh-slave-alpine
-SUT_CONTAINER=bats-jenkins-ssh-slave-alpine
+SUT_CONTAINER=bats-jenkins-ssh-agent-alpine
 
 load test_helpers
 load keys
@@ -24,8 +24,10 @@ load keys
 	docker rm -fv "${SUT_CONTAINER}" &>/dev/null ||:
 }
 
-@test "create slave container" {
-	docker run -d --name "${SUT_CONTAINER}" -P $SUT_IMAGE "$PUBLIC_SSH_KEY"
+@test "create agent container" {
+	docker run -d --name "${SUT_CONTAINER}" -P \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    $SUT_IMAGE "${PUBLIC_SSH_KEY}"
 }
 
 @test "image has bash and java installed and in the PATH" {
@@ -35,7 +37,16 @@ load keys
 	docker exec "${SUT_CONTAINER}" java -version
 }
 
-@test "slave container is running" {
+@test "docker client is installed, in the Path and executable" {
+  docker exec "${SUT_CONTAINER}" which docker
+  docker exec "${SUT_CONTAINER}" docker version
+}
+
+@test "we can access the docker engine from the underlying host" {
+  docker exec "${SUT_CONTAINER}" docker ps
+}
+
+@test "agent container is running" {
 	sleep 1  # give time to sshd to eventually fail to initialize
 	retry 3 1 assert "true" docker inspect -f {{.State.Running}} "${SUT_CONTAINER}"
 }
@@ -43,7 +54,10 @@ load keys
 @test "connection with ssh + private key" {
 	run_through_ssh echo f00
 
-	[ "$status" = "0" ] && [ "$output" = "f00" ] \
+  echo "==${status}"
+  echo "==${output}"
+
+	[ "${status}" = "0" ] && [ "${output}" = "f00" ] \
 		|| (\
 			echo "status: $status"; \
 			echo "output: $output"; \
@@ -51,18 +65,19 @@ load keys
 		)
 }
 
-
-
 @test "clean test container" {
 	docker kill "${SUT_CONTAINER}" &>/dev/null ||:
 	docker rm -fv "${SUT_CONTAINER}" &>/dev/null ||:
 }
 
-@test "create slave container with pubkey as environment variable" {
-	docker run -e "JENKINS_SLAVE_SSH_PUBKEY=$PUBLIC_SSH_KEY" -d --name "${SUT_CONTAINER}" -P $SUT_IMAGE
+@test "create agent container with pubkey as environment variable" {
+	docker run -e "JENKINS_SLAVE_SSH_PUBKEY=${PUBLIC_SSH_KEY}" -d \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    --name "${SUT_CONTAINER}" -P \
+    "${SUT_IMAGE}"
 }
 
-@test "slave container is running" {
+@test "agent container is running" {
 	sleep 1  # give time to sshd to eventually fail to initialize
 	retry 3 1 assert "true" docker inspect -f {{.State.Running}} "${SUT_CONTAINER}"
 }

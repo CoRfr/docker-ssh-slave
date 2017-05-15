@@ -57,13 +57,13 @@ function run_through_ssh {
 		 	&& chmod 0600 "${TMP_PRIV_KEY_FILE}"
 
 		run ssh -i "${TMP_PRIV_KEY_FILE}" \
-			-o LogLevel=quiet \
+      -o LogLevel=quiet \
 			-o UserKnownHostsFile=/dev/null \
 			-o StrictHostKeyChecking=no \
 			-l jenkins \
 			localhost \
 			-p "${SSH_PORT}" \
-			"$@"
+			"${*}"
 
 		rm -f "${TMP_PRIV_KEY_FILE}"
 	fi
