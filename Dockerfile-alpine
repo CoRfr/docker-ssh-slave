@@ -59,3 +59,13 @@ WORKDIR "${JENKINS_AGENT_HOME}"
 EXPOSE 22
 
 ENTRYPOINT ["/sbin/tini","--","/usr/local/bin/setup-sshd"]
+
+# encaps
+RUN ( \
+        cd /usr/bin && \
+        curl -o master.zip -L https://github.com/swi-infra/jenkins-docker-encaps/archive/master.zip && \
+        unzip master.zip && \
+        mv jenkins-docker-encaps-master/encaps* . && \
+        rm -rf master.zip jenkins-docker-encaps-master \
+    )
+
