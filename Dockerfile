@@ -69,7 +69,7 @@ RUN ( \
 
 # Base packages
 RUN ( apt-get update && \
-      apt-get -y install net-tools git python bzip2 jq netcat-openbsd libxml2-utils && \
+      apt-get -y install net-tools git python bzip2 jq netcat-openbsd libxml2-utils rsync && \
       apt-get clean && \
       rm -rf /var/lib/apt/lists/* )
 
