@@ -60,8 +60,10 @@ EXPOSE 22
 
 ENTRYPOINT ["/sbin/tini","--","/usr/local/bin/setup-sshd"]
 
-# Copy tini
-RUN mkdir -p /opt/tini && cp /sbin/tini /opt/tini/tini
+# Add static tini
+ENV TINI_VERSION v0.14.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /opt/tini/tini
+RUN chmod +x /opt/tini/tini
 VOLUME /opt/tini
 
 # encaps
