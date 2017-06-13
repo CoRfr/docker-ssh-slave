@@ -46,6 +46,13 @@ RUN sed -i 's/#LogLevel.*/LogLevel INFO/' /etc/ssh/sshd_config
 RUN sed -ri 's/^session\s+required\s+pam_loginuid.so$/session optional pam_loginuid.so/' /etc/pam.d/sshd
 RUN mkdir /var/run/sshd
 
+# Docker version follows stable from CoreOS
+ENV DOCKER_VERSION 1.12.6
+
+RUN ( cd /tmp && \
+      curl -fsSLO https://get.docker.com/builds/Linux/x86_64/docker-$DOCKER_VERSION.tgz && \
+      tar --strip-components=1 -xvzf docker-$DOCKER_VERSION.tgz -C /usr/bin )
+
 # Add static tini
 ENV TINI_VERSION v0.14.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /opt/tini/tini
