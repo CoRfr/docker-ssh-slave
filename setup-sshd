@@ -21,7 +21,7 @@ then
   else
     # Nope. Create a new dummy group then
     SOCKET_GROUP="docker-dummy"
-    addgroup -g "${SOCKET_GID}" "${SOCKET_GROUP}"
+    addgroup --gid "${SOCKET_GID}" "${SOCKET_GROUP}"
   fi
 fi
 
