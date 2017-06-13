@@ -58,7 +58,6 @@ ENV TINI_VERSION v0.14.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /opt/tini/tini
 RUN chmod +x /opt/tini/tini
 VOLUME /opt/tini
-
 # encaps
 RUN ( \
         cd /usr/bin && \
@@ -67,6 +66,12 @@ RUN ( \
         mv jenkins-docker-encaps-master/encaps* . && \
         rm -rf master.zip jenkins-docker-encaps-master \
     )
+
+# Base packages
+RUN ( apt-get update && \
+      apt-get -y install net-tools git python bzip2 jq netcat-openbsd libxml2-utils && \
+      apt-get clean && \
+      rm -rf /var/lib/apt/lists/* )
 
 VOLUME "${JENKINS_AGENT_HOME}" "/tmp" "/run" "/var/run"
 WORKDIR "${JENKINS_AGENT_HOME}"
