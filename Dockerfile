@@ -46,6 +46,21 @@ RUN sed -i 's/#LogLevel.*/LogLevel INFO/' /etc/ssh/sshd_config
 RUN sed -ri 's/^session\s+required\s+pam_loginuid.so$/session optional pam_loginuid.so/' /etc/pam.d/sshd
 RUN mkdir /var/run/sshd
 
+# Add static tini
+ENV TINI_VERSION v0.14.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /opt/tini/tini
+RUN chmod +x /opt/tini/tini
+VOLUME /opt/tini
+
+# encaps
+RUN ( \
+        cd /usr/bin && \
+        curl -o master.zip -L https://github.com/swi-infra/jenkins-docker-encaps/archive/master.zip && \
+        unzip master.zip && \
+        mv jenkins-docker-encaps-master/encaps* . && \
+        rm -rf master.zip jenkins-docker-encaps-master \
+    )
+
 VOLUME "${JENKINS_AGENT_HOME}" "/tmp" "/run" "/var/run"
 WORKDIR "${JENKINS_AGENT_HOME}"
 
@@ -53,4 +68,4 @@ COPY setup-sshd /usr/local/bin/setup-sshd
 
 EXPOSE 22
 
-ENTRYPOINT ["setup-sshd"]
+ENTRYPOINT ["/opt/tini/tini","--","/usr/local/bin/setup-sshd"]
