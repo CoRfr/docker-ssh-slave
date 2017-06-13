@@ -60,6 +60,10 @@ EXPOSE 22
 
 ENTRYPOINT ["/sbin/tini","--","/usr/local/bin/setup-sshd"]
 
+# Copy tini
+RUN mkdir -p /opt/tini && cp /sbin/tini /opt/tini/tini
+VOLUME /opt/tini
+
 # encaps
 RUN ( \
         cd /usr/bin && \
